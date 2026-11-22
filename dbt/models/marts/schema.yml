@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: daily_sales
+    description: Daily completed-order gross sales from synthetic retail data.
+    columns:
+      - name: order_date
+        data_tests: [not_null, unique]
+      - name: gross_revenue
+        data_tests: [not_null]
