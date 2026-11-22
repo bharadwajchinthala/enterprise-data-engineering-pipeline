@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/*.csv
+data/silver_orders/
+logs/
+target/
+dbt_packages/
+.DS_Store
