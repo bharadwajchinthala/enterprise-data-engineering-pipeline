@@ -1,0 +1,4 @@
+pytest>=8,<10
+pyspark>=3.5,<4
+snowflake-connector-python>=3,<5
+dbt-snowflake>=1.8,<2
