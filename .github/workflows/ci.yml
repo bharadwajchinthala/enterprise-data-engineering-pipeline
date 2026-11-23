@@ -1,0 +1,53 @@
+name: Python and PySpark CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Unit tests (Python 3.11, Java 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java for PySpark
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pytest>=8,<10" "pyspark>=3.5,<4"
+
+      - name: Run Python and PySpark tests
+        env:
+          SPARK_LOCAL_IP: 127.0.0.1
+          PYSPARK_PYTHON: python
+        run: |
+          python -m pytest -v -ra tests/
+
+      - name: Check dbt model files are present
+        run: |
+          test -f dbt/dbt_project.yml
+          test -f dbt/models/staging/stg_orders.sql
+          test -f dbt/models/marts/daily_sales.sql
+
+# CI intentionally does not connect to Snowflake or use any private credentials.
