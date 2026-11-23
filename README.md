@@ -1,6 +1,8 @@
 # End-to-End Retail Data Engineering Pipeline
 
-**Status: integrated pipeline built locally; dbt rebuild against PySpark Silver source pending verification.**
+[![Python and PySpark CI](https://github.com/bharadwajchinthala/enterprise-data-engineering-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/bharadwajchinthala/enterprise-data-engineering-pipeline/actions/workflows/ci.yml)
+
+**Status: validated local end-to-end execution and passing GitHub Actions Python/PySpark CI.**
 
 A portfolio project using **synthetic retail orders** to demonstrate Python ingestion, PySpark transformations, Parquet storage, Snowflake loading, and dbt models/tests. No employer code or customer data is used.
 
@@ -41,6 +43,19 @@ python -m pytest -q tests/test_generate_data.py
 python -m src.transform_orders
 ```
 
+## Run the full pipeline
+
+Once Snowflake is configured and the virtual environment is active, run all five local stages together:
+
+```bash
+set -a
+source .env
+set +a
+python -m src.run_pipeline
+```
+
+This runs synthetic data generation, Python unit tests, PySpark cleaning, the Snowflake Silver loader, and dbt models/tests in order. It fails fast on errors. **Observed local run:** 5/5 stages passed in **25.1 seconds** for 1,000 synthetic orders; timing depends on local hardware and Snowflake authentication.
+
 ## Load Snowflake Silver data
 
 1. Create `RETAIL_PORTFOLIO.RAW` using `sql/setup.sql` and select an appropriately sized, auto-suspending warehouse.
@@ -76,12 +91,27 @@ SELECT COUNT(*) FROM RETAIL_PORTFOLIO.DBT_DEV.STG_ORDERS;
 SELECT * FROM RETAIL_PORTFOLIO.DBT_DEV.DAILY_SALES ORDER BY ORDER_DATE LIMIT 10;
 ```
 
+## Verified sample results
+
+Results from a completed local run and Snowflake verification query using **1,000 synthetic orders**:
+
+| Metric | Value |
+| --- | ---: |
+| Silver orders | 1,000 |
+| dbt staging orders | 1,000 |
+| Completed orders | 566 |
+| Completed gross revenue | $412,491.12 |
+| dbt build operations | 8/8 passed (2 models + 6 tests) |
+
+The [Python and PySpark CI workflow](.github/workflows/ci.yml) also passed on GitHub Actions (first run: 43 seconds). CI uses Python 3.11 and Java 17; it intentionally does **not** connect to a live Snowflake account.
+
 ## Current implementation and limitations
 
 - Deterministic synthetic orders, PySpark filtering and deduplication, calculated `gross_amount`
 - Local Parquet Silver layer; Snowflake Silver loader; dbt staging/mart models and source tests
-- Validation of the **updated** dbt model against SILVER_ORDERS is still pending
-- Planned improvements: end-to-end automation, incremental MERGE, Snowflake stages/COPY INTO for large-scale loading, CI, monitoring and architecture screenshots
+- Updated dbt model against SILVER_ORDERS was built successfully and cross-checked in Snowflake
+- A one-command **local** orchestrator exists; it is not a scheduler and does not imply unattended cloud deployment
+- Planned improvements: incremental MERGE, Snowflake stages/COPY INTO for large-scale loading, monitoring, and architecture screenshots
 - The demo Silver loader replaces records in a dedicated table, not a production target
 
 ## Security
